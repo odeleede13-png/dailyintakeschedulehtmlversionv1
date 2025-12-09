@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>44-Interval Timer Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2080c0;
+            --success: #20a050;
+            --warning: #ff9900;
+            --danger: #d00;
+            --bg: #f5f5f5;
+            --card: #fff;
+            --text: #333;
+            --text-light: #666;
+            --border: #ddd;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        nav {
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        nav h1 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        nav .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .status-badge.active {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            background: #f5f5f5;
+            color: var(--text-light);
+        }
+
+        .status-badge.critical {
+            background: #ffebee;
+            color: var(--danger);
+        }
+
+        .interval-card {
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #f9f9f9;
+        }
+
+        .interval-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .interval-card p {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+
+        .meal-table, .med-table, .symptom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .meal-table th, .med-table th, .symptom-table th {
+            background: var(--bg);
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            font-weight: bold;
+        }
+
+        .meal-table td, .med-table td, .symptom-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meal-table tr:hover, .med-table tr:hover, .symptom-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .glucose-good {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .glucose-warn {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        .glucose-bad {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .dumping-none {
+            color: var(--success);
+        }
+
+        .dumping-mild {
+            color: var(--warning);
+        }
+
+        .dumping-moderate, .dumping-severe {
+            color: var(--danger);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .stat-box {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-box strong {
+            display: block;
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-box span {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .error {
+            background: #ffebee;
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+        }
+
+        .refresh-time {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 12px;
+        }
+
+        .time-phase {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .time-phase.peak {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .time-phase.transition {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .time-phase.crash {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        .time-phase.recovery {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>⏰ 44-Interval Timer Dashboard</h1>
+        <div class="nav-links">
+            <a class="nav-link active" data-page="overview">Overview</a>
+            <a class="nav-link" data-page="meals">Meals</a>
+            <a class="nav-link" data-page="medications">Medications</a>
+            <a class="nav-link" data-page="symptoms">Symptoms</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- OVERVIEW PAGE -->
+        <div id="overview" class="page active">
+            <div class="section">
+                <h2>Current Status</h2>
+                <div id="current-status" class="loading">Loading timer status...</div>
+            </div>
+
+            <div class="section">
+                <h2>Today's Summary</h2>
+                <div id="daily-summary" class="loading">Loading daily summary...</div>
+            </div>
+
+            <div class="section">
+                <h2>Today's Meals Preview</h2>
+                <div id="meals-preview" class="loading">Loading meals...</div>
+            </div>
+
+            <div class="refresh-time">🔄 Last updated: <span id="last-update">never</span></div>
+        </div>
+
+        <!-- MEALS PAGE -->
+        <div id="meals" class="page">
+            <div class="section">
+                <h2>Today's Meals</h2>
+                <div id="meals-list" class="loading">Loading meals...</div>
+            </div>
+        </div>
+
+        <!-- MEDICATIONS PAGE -->
+        <div id="medications" class="page">
+            <div class="section">
+                <h2>Today's Medications</h2>
+                <div id="meds-list" class="loading">Loading medications...</div>
+            </div>
+        </div>
+
+        <!-- SYMPTOMS PAGE -->
+        <div id="symptoms" class="page">
+            <div class="section">
+                <h2>Today's Symptoms</h2>
+                <div id="symptoms-list" class="loading">Loading symptoms...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Configuration
+        const API_BASE = 'https://interval-timer-cloud.vercel.app';
+        const SUPABASE_URL = 'https://your-supabase-project.supabase.co'; // Replace with your URL
+        const SUPABASE_KEY = 'your-supabase-anon-key'; // Replace with your key
+
+        // Helper: Format time remaining
+        function formatTime(seconds) {
+            if (!seconds || seconds < 0) return '0m';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        }
+
+        // Helper: Get phase of day
+        function getPhase(hour) {
+            if (hour >= 6 && hour < 8) return { name: 'Morning', class: 'recovery' };
+            if (hour >= 8 && hour < 12) return { name: 'Peak Focus', class: 'peak' };
+            if (hour >= 12 && hour < 14) return { name: 'Lunch', class: 'peak' };
+            if (hour >= 14 && hour < 17) return { name: 'Afternoon Transition', class: 'transition' };
+            if (hour >= 17 && hour < 19) return { name: 'Comedown', class: 'crash' };
+            if (hour >= 19 && hour < 22) return { name: 'Evening Wind-Down', class: 'recovery' };
+            return { name: 'Sleep', class: 'recovery' };
+        }
+
+        // Helper: Fetch from Supabase
+        async function supabaseQuery(table, select = '*', filters = {}) {
+            try {
+                let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
+                Object.entries(filters).forEach(([key, val]) => {
+                    url += `&${key}=eq.${val}`;
+                });
+
+                const res = await fetch(url, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                return await res.json();
+            } catch (err) {
+                console.error('Supabase error:', err);
+                return [];
+            }
+        }
+
+        // Load current timer status
+        async function loadTimerStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/api/status`);
+                const data = await res.json();
+
+                const today = new Date();
+                const phase = getPhase(today.getHours());
+
+                let html = '';
+                if (data.status === 'inactive') {
+                    html = `
+                        <div class="status-badge inactive">Inactive</div>
+                        <p>No active session. Start-day not triggered.</p>
+                    `;
+                } else {
+                    html = `
+                        <div class="status-badge active">Active</div>
+                        <p><strong>Current Interval:</strong> ${data.currentInterval?.name}</p>
+                        <p><strong>Time Remaining:</strong> ${formatTime(data.timeRemaining)}</p>
+                        <p><strong>Phase:</strong> <span class="time-phase ${phase.class}">${phase.name}</span></p>
+                        <p><strong>Next:</strong> ${data.nextInterval?.name}</p>
+                    `;
+                }
+                document.getElementById('current-status').innerHTML = html;
+            } catch (err) {
+                document.getElementById('current-status').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Load daily summary
+        async function loadDailySummary() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const data = await supabaseQuery('daily_summary', '*', { date: today });
+
+                if (!data || data.length === 0) {
+                    document.getElementById('daily-summary').innerHTML = '<div class="empty">No data yet for today.</div>';
+                    return;
+                }
+
+                const summary = data[0];
+                const html = `
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <strong>${summary.total_meals_completed || 0}/6</strong>
+                            <span>Meals Completed</span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>${summary.total_water_intake_ml || 0} ml</strong>
+                            <span>Water Intake</span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>${summary.average_glucose?.toFixed(1) || '–'}</strong>
+                            <span>Avg Glucose</span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>${summary.mood_overall || '–'}</strong>
+                            <span>Mood</span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>${summary.stress_overall || '–'}</strong>
+                            <span>Stress Level</span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>${summary.sleep_hours_previous_night?.toFixed(1) || '–'} h</strong>
+                            <span>Sleep Quality: ${summary.sleep_quality_previous_night || '–'}</span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('daily-summary').innerHTML = html;
+            } catch (err) {
+                document.getElementById('daily-summary').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Load meals list
+        async function loadMeals() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const meals = await supabaseQuery('meal_log', '*', { date: today });
+
+                if (!meals || meals.length === 0) {
+                    document.getElementById('meals-list').innerHTML = '<div class="empty">No meals logged yet today.</div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="meal-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Glucose</th>
+                                <th>Dumping</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                meals.forEach(meal => {
+                    const glucoseClass = !meal.glucose_reading ? '' : 
+                        meal.glucose_reading < 5 ? 'glucose-good' :
+                        meal.glucose_reading < 6.5 ? 'glucose-warn' : 'glucose-bad';
+                    
+                    const dumpingClass = meal.dumping_severity ? `dumping-${meal.dumping_severity.toLowerCase()}` : 'dumping-none';
+
+                    html += `
+                        <tr>
+                            <td>${meal.meal_number}</td>
+                            <td>${meal.meal_name}</td>
+                            <td class="${glucoseClass}">${meal.glucose_reading?.toFixed(1) || '–'}</td>
+                            <td class="${dumpingClass}">${meal.dumping_severity || 'None'}</td>
+                            <td>${meal.notes || ''}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                document.getElementById('meals-list').innerHTML = html;
+                document.getElementById('meals-preview').innerHTML = html.substring(0, 500) + '...';
+            } catch (err) {
+                document.getElementById('meals-list').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Load medications list
+        async function loadMedications() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const meds = await supabaseQuery('medication_log', '*', { date: today });
+
+                if (!meds || meds.length === 0) {
+                    document.getElementById('meds-list').innerHTML = '<div class="empty">No medications logged yet today.</div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="med-table">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dose</th>
+                                <th>Time Deviation</th>
+                                <th>Focus Impact</th>
+                                <th>Mood Impact</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                meds.forEach(med => {
+                    const deviation = med.time_deviation_minutes ? `${med.time_deviation_minutes}m` : 'On time';
+                    html += `
+                        <tr>
+                            <td><strong>${med.medication_name}</strong></td>
+                            <td>${med.dose}</td>
+                            <td>${deviation}</td>
+                            <td>${med.focus_impact_0_10 || '–'}/10</td>
+                            <td>${med.mood_impact_0_10 || '–'}/10</td>
+                            <td>${med.notes || ''}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                document.getElementById('meds-list').innerHTML = html;
+            } catch (err) {
+                document.getElementById('meds-list').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Load symptoms list
+        async function loadSymptoms() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const symptoms = await supabaseQuery('symptom_log', '*', { date: today });
+
+                if (!symptoms || symptoms.length === 0) {
+                    document.getElementById('symptoms-list').innerHTML = '<div class="empty">No symptoms logged yet today.</div>';
+                    return;
+                }
+
+                let html = '';
+                symptoms.forEach(sym => {
+                    html += `
+                        <div class="interval-card">
+                            <h3>${sym.symptom_type}</h3>
+                            <p><strong>Time:</strong> ${sym.time_of_occurrence}</p>
+                            <p><strong>HR:</strong> ${sym.hr_bpm} bpm | <strong>Nausea:</strong> ${sym.nausea_0_10}/10 | <strong>Anxiety:</strong> ${sym.anxiety_0_10}/10 | <strong>Dizziness:</strong> ${sym.dizziness_0_10}/10</p>
+                            <p><strong>Diagnosis:</strong> ${sym.likely_diagnosis} (${sym.confidence_pct}% confidence)</p>
+                            <p><strong>Recovery Time:</strong> ${sym.recovery_minutes} min | <strong>Technique:</strong> ${sym.grounding_technique_used || '–'}</p>
+                            <p><strong>Notes:</strong> ${sym.notes || '–'}</p>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('symptoms-list').innerHTML = html;
+            } catch (err) {
+                document.getElementById('symptoms-list').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                
+                // Show selected page
+                document.getElementById(page).classList.add('active');
+                link.classList.add('active');
+
+                // Load data for page
+                if (page === 'meals') loadMeals();
+                if (page === 'medications') loadMedications();
+                if (page === 'symptoms') loadSymptoms();
+            });
+        });
+
+        // Load data on startup
+        function refreshAll() {
+            loadTimerStatus();
+            loadDailySummary();
+            loadMeals();
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Initial load
+        refreshAll();
+
+        // Refresh every 30 seconds
+        setInterval(refreshAll, 30000);
+    </script>
+</body>
+</html>
